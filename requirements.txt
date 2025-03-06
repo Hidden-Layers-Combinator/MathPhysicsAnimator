@@ -1,6 +1,8 @@
-streamlit
+streamlit==1.43.0
+manim==0.19.0
+manimpango==0.6.0
+pycairo==1.27.0
 sympy
 gtts
 pydub
-manim
 ffmpeg-python
