@@ -3,4 +3,4 @@ sympy
 gtts
 pydub
 manim
-pycairo==1.26.0
+ffmpeg-python
