@@ -1,6 +1,6 @@
 pip==25.0.1
-streamlit
 python-3.x
+streamlit
 sympy
 gtts
 pydub
