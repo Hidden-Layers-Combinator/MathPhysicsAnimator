@@ -47,19 +47,19 @@ def generate_video(equation):
   draw='Lets Draw the graph.'
   script=[Intro,given,vertex+d+roots_str]
   #first audio
-  audio_path1="first.mp3"
+  audio_path1="/tmp/first.mp3"
   first = gTTS(text=script[0], lang='en')
   first.save(audio_path1)
   #second audio
-  audio_path2="second.mp3"
+  audio_path2="/tmp/second.mp3"
   second = gTTS(text=script[1], lang='en')
   second.save(audio_path2)
   #third audio
-  audio_path3="third.mp3"
+  audio_path3="/tmp/third.mp3"
   third=gTTS(text=script[2],lang='en')
   third.save(audio_path3)
   #fourth audio
-  audio_path4="fourth.mp3"
+  audio_path4="/tmp/fourth.mp3"
   fourth=gTTS(text=draw,lang='en')
   fourth.save(audio_path4)
   audio_1 = AudioSegment.from_mp3(audio_path1)
@@ -175,7 +175,7 @@ def generate_video(equation):
       else:
         self.play(Write(r_text))
       self.wait(3)
-  video_path = "QuadraticGraph.mp4"
+  video_path = "/tmp/QuadraticGraph.mp4"
   scene = QuadraticGraph()
   scene.render(preview=False)
   return video_path,audio_path1,audio_path2,audio_path3,audio_path4
