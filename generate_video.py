@@ -176,7 +176,6 @@ def generate_video(equation):
         self.play(Write(r_text))
       self.wait(3)
   video_path = "QuadraticGraph.mp4"
-  config.renderer = "cairo"
   scene = QuadraticGraph()
   scene.render(preview=False)
   return video_path,audio_path1,audio_path2,audio_path3,audio_path4
