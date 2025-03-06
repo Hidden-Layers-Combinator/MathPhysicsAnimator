@@ -3,3 +3,4 @@ sympy
 gtts
 pydub
 manim
+pycairo==1.27.0
