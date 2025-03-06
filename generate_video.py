@@ -73,7 +73,7 @@ def generate_video(equation):
       audio_length_3=len(audio_3)/1000
       audio_length_4=len(audio_4)/1000
       #Intro
-      intro_text=Text(f'Welcome to GraphCaster. I am your instructor jojo. You have given the equation {wordEquation}. Lets first note the coefficients').scale(0.3)
+      intro_text=Text(f'Welcome to Animath. I am your instructor jojo. You have given the equation {wordEquation}. Lets first note the coefficients').scale(0.3)
       #Given of Equation
       a_text = Text(f"a = {a}", color=WHITE).to_corner(UP + LEFT, buff=0.5)
       b_text = Text(f"b = {b}", color=WHITE).next_to(a_text, DOWN, aligned_edge=LEFT, buff=0.6)
