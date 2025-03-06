@@ -89,22 +89,22 @@ def generate_video(equation):
 
       #vertex
       vertex = Dot(axes.coords_to_point(vertex_x, vertex_y), color=GREEN)
-      vertex_label = MathTex(r"Vertex ({},{})".format(vertex_x,vertex_y)).scale(0.3)
+      vertex_label = Text(f"Vertex ({},{})".format(vertex_x,vertex_y)).scale(0.3)
       vertex_label.next_to(vertex, DOWN)
       #roots
       if(len(roots)==1):
         root1=Dot(axes.coords_to_point(roots[0],0),color=YELLOW)
-        root1_text=MathTex(r"({},{})".format(roots[0],0)).next_to(root1,UP).scale(0.4)
+        root1_text=Text(f"({},{})".format(roots[0],0)).next_to(root1,UP).scale(0.4)
       elif(len(roots)==2):
         root1=Dot(axes.coords_to_point(roots[0],0),color=YELLOW)
-        root1_text=MathTex(r"({},{})".format(roots[0],0)).next_to(root1,UP).scale(0.4)
+        root1_text=Text(f"({},{})".format(roots[0],0)).next_to(root1,UP).scale(0.4)
         root2=Dot(axes.coords_to_point(roots[1],0),color=YELLOW)
-        root2_text=MathTex(r"({},{})".format(roots[1],0)).next_to(root2,UP).scale(0.4)
+        root2_text=Text(f"({},{})".format(roots[1],0)).next_to(root2,UP).scale(0.4)
       else:
-        r_text=MathTex(r"Roots = {}".format(roots)).scale(0.6).to_corner(DOWN+RIGHT,buff=0.6)
+        r_text=Text(f"Roots = {}".format(roots)).scale(0.6).to_corner(DOWN+RIGHT,buff=0.6)
     
       #discriminant
-      d_text=MathTex(r"Discriminant = {}".format(discriminant)).scale(0.6).to_corner(DOWN+RIGHT,buff=0.6)
+      d_text=Text(f"Discriminant = {}".format(discriminant)).scale(0.6).to_corner(DOWN+RIGHT,buff=0.6)
 
       #Animation
       self.add_sound(audio_path1)
@@ -173,7 +173,7 @@ def generate_video(equation):
       else:
         self.play(Write(r_text))
       self.wait(3)
-  video_path = "/content/media/videos/1080p60/QuadraticGraph.mp4"
+  video_path = "QuadraticGraph.mp4"
   config.renderer = "cairo"
   scene = QuadraticGraph()
   scene.render(preview=False)
