@@ -81,11 +81,13 @@ def generate_video(equation):
 
       #Axes & Graph of equation
       axes = Axes(x_range=[-5, 5, 1], y_range=[-5, 5, 1], x_length=6, y_length=6)
-      labels = axes.get_axis_labels(x_label="x", y_label="f(x)")
+      x_label = Text("x", font_size=24).next_to(axes.x_axis, RIGHT)
+      y_label = Text("f(x)", font_size=24).next_to(axes.y_axis, UP)
+
       graph = axes.plot(lambda x: a * x**2 + b * x + c, color=BLUE)
 
       #grouping
-      graph_group = VGroup(axes, labels, graph,a_text,b_text,c_text)
+      graph_group = VGroup(axes, x_label, y_label, graph, a_text, b_text, c_text)
 
       #vertex
       vertex = Dot(axes.coords_to_point(vertex_x, vertex_y), color=GREEN)
