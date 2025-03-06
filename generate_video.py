@@ -35,7 +35,7 @@ def generate_video(equation):
     wordEquation+=" plus "+str(c)
   elif c<0:
     wordEquation+=" minus "+str(abs(c))
-  Intro=f'Welcome to GraphCaster. I am your instructor jojo. You have given the equation {wordEquation}. Lets first note the coefficients '
+  Intro=f'Welcome to Animath. I am your instructor jojo. You have given the equation {wordEquation}. Lets first note the coefficients '
   roots_str = (
         f" It has two real roots at x equals {roots[0]:.1f} and {roots[1]:.1f}." if len(roots) == 2 else
         f" It has one real root at x equals {roots[0]:.1f}." if len(roots) == 1 else
@@ -47,19 +47,19 @@ def generate_video(equation):
   draw='Lets Draw the graph.'
   script=[Intro,given,vertex+d+roots_str]
   #first audio
-  audio_path1="/tmp/first.mp3"
+  audio_path1="first.mp3"
   first = gTTS(text=script[0], lang='en')
   first.save(audio_path1)
   #second audio
-  audio_path2="/tmp/second.mp3"
+  audio_path2="second.mp3"
   second = gTTS(text=script[1], lang='en')
   second.save(audio_path2)
   #third audio
-  audio_path3="/tmp/third.mp3"
+  audio_path3="third.mp3"
   third=gTTS(text=script[2],lang='en')
   third.save(audio_path3)
   #fourth audio
-  audio_path4="/tmp/fourth.mp3"
+  audio_path4="fourth.mp3"
   fourth=gTTS(text=draw,lang='en')
   fourth.save(audio_path4)
   audio_1 = AudioSegment.from_mp3(audio_path1)
@@ -110,7 +110,7 @@ def generate_video(equation):
 
       #Animation
       self.add_sound(audio_path1)
-      self.play(Write(intro_text),run_time=audio_length_1)
+      self.play(AddTextLetterByLetter(intro_text),run_time=audio_length_1)
       self.play(FadeOut(intro_text))
       self.add_sound(audio_path2)
       self.play(Write(a_text), Write(b_text), Write(c_text), run_time=audio_length_2)
