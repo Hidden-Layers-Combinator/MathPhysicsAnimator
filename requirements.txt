@@ -1,6 +1,6 @@
 streamlit
 os
 sympy
-gTTS
+gtts
 pydub
 manim
