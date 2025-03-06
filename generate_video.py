@@ -119,7 +119,7 @@ def generate_video(equation):
       self.play(Create(graph),run_time=3)
       self.add_sound(audio_path3)
       self.play(
-            self.camera.animate.set_width(2).move_to(vertex.get_center()),
+            self.camera.frame.animate.set_width(2).move_to(vertex.get_center()),
             run_time=1
       )
       self.play(Create(vertex),run_time=1)
