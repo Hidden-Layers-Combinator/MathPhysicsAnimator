@@ -91,22 +91,22 @@ def generate_video(equation):
 
       #vertex
       vertex = Dot(axes.coords_to_point(vertex_x, vertex_y), color=GREEN)
-      vertex_label = Text(f"Vertex ({},{})".format(vertex_x,vertex_y)).scale(0.3)
+      vertex_label = Text(f"Vertex ({vertex_x},{vertex_y})").scale(0.3)
       vertex_label.next_to(vertex, DOWN)
       #roots
       if(len(roots)==1):
         root1=Dot(axes.coords_to_point(roots[0],0),color=YELLOW)
-        root1_text=Text(f"({},{})".format(roots[0],0)).next_to(root1,UP).scale(0.4)
+        root1_text=Text(f"({roots[0]},{0})").next_to(root1,UP).scale(0.4)
       elif(len(roots)==2):
         root1=Dot(axes.coords_to_point(roots[0],0),color=YELLOW)
-        root1_text=Text(f"({},{})".format(roots[0],0)).next_to(root1,UP).scale(0.4)
+        root1_text=Text(f"({roots[0]},{0})").next_to(root1,UP).scale(0.4)
         root2=Dot(axes.coords_to_point(roots[1],0),color=YELLOW)
-        root2_text=Text(f"({},{})".format(roots[1],0)).next_to(root2,UP).scale(0.4)
+        root2_text=Text(f"({roots[1]},{0})").next_to(root2,UP).scale(0.4)
       else:
-        r_text=Text(f"Roots = {}".format(roots)).scale(0.6).to_corner(DOWN+RIGHT,buff=0.6)
+        r_text=Text(f"Roots = {roots}").scale(0.6).to_corner(DOWN+RIGHT,buff=0.6)
     
       #discriminant
-      d_text=Text(f"Discriminant = {}".format(discriminant)).scale(0.6).to_corner(DOWN+RIGHT,buff=0.6)
+      d_text=Text(f"Discriminant = {discriminant}").scale(0.6).to_corner(DOWN+RIGHT,buff=0.6)
 
       #Animation
       self.add_sound(audio_path1)
