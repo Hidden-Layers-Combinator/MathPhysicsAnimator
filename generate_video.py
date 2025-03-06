@@ -115,7 +115,7 @@ def generate_video(equation):
       self.add_sound(audio_path2)
       self.play(Write(a_text), Write(b_text), Write(c_text), run_time=audio_length_2)
       self.add_sound(audio_path4)
-      self.play(Create(axes), Write(labels),run_time=2)
+      self.play(Create(axes), Write(x_label),Write(y_label),run_time=2)
       self.play(Create(graph),run_time=3)
       self.add_sound(audio_path3)
       self.play(
