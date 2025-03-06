@@ -4,4 +4,3 @@ libpango1.0-0
 libpango1.0-dev
 pkg-config
 ffmpeg
-tectonic
