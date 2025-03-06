@@ -3,11 +3,6 @@ from sympy import symbols, solve, sympify
 from manim import *
 from pydub import AudioSegment
 import time
-from manim import TexTemplate
-
-TEX_TEMPLATE = TexTemplate()
-TEX_TEMPLATE.tex_compiler = "tectonic"  # Force using Tectonic
-TEX_TEMPLATE.output_format = ".pdf"
 def generate_video(equation):
   x=symbols('x')
   eq=sympify(equation)
@@ -80,10 +75,9 @@ def generate_video(equation):
       #Intro
       intro_text=Text(f'Welcome to GraphCaster. I am your instructor jojo. You have given the equation {wordEquation}. Lets first note the coefficients').scale(0.3)
       #Given of Equation
-
-      a_text = Tex(f"a = {a}", color=WHITE).to_corner(UP + LEFT,buff=0.6)
-      b_text = Tex(f"b = {b}", color=WHITE).next_to(a_text, DOWN, aligned_edge=LEFT, buff=0.6)
-      c_text = Tex(f"c = {c}", color=WHITE).next_to(b_text, DOWN, aligned_edge=LEFT,buff=0.6)
+      a_text = Text(f"a = {a}", color=WHITE).to_corner(UP + LEFT, buff=0.5)
+      b_text = Text(f"b = {b}", color=WHITE).next_to(a_text, DOWN, aligned_edge=LEFT, buff=0.6)
+      c_text = Text(f"c = {c}", color=WHITE).next_to(b_text, DOWN, aligned_edge=LEFT,buff=0.6)
 
       #Axes & Graph of equation
       axes = Axes(x_range=[-5, 5, 1], y_range=[-5, 5, 1], x_length=6, y_length=6)
