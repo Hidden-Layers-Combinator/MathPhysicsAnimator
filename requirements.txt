@@ -3,4 +3,4 @@ sympy
 gtts
 pydub
 manim
-pycairo==1.27.0
+# Remove pycairo==1.27.0; let Manim handle it
