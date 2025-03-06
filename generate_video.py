@@ -3,6 +3,11 @@ from sympy import symbols, solve, sympify
 from manim import *
 from pydub import AudioSegment
 import time
+from manim import TexTemplate
+
+TEX_TEMPLATE = TexTemplate()
+TEX_TEMPLATE.tex_compiler = "tectonic"  # Force using Tectonic
+TEX_TEMPLATE.output_format = ".pdf"
 def generate_video(equation):
   x=symbols('x')
   eq=sympify(equation)
