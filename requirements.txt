@@ -1,6 +1,5 @@
-pip
 streamlit
-os
+python-3.x
 sympy
 gtts
 pydub
