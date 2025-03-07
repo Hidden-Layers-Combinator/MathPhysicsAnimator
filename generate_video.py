@@ -73,7 +73,7 @@ def generate_video(equation):
   combined_audio = audio_1 + AudioSegment.silent(duration=1000)  # 1s pause after intro
   combined_audio += audio_2 
   combined_audio += audio_4+AudioSegment.silent(duration=4000)
-  combined_audio += audio_3)
+  combined_audio += audio_3
   
   combined_audio_path = f"/tmp/combined_{unique_id}.mp3"
   combined_audio.export(combined_audio_path, format="mp3")
@@ -120,7 +120,7 @@ def generate_video(equation):
       d_text=Text(f"Discriminant = {discriminant}").scale(0.6).to_corner(DOWN+RIGHT,buff=0.6)
 
       #Animation
-      self.add_sound("/tmp/combined_{unique_id}.mp3")
+      self.add_sound(combined_audio_path)
       self.play(AddTextLetterByLetter(intro_text),run_time=audio_length_1)
       self.play(FadeOut(intro_text))
       # self.add_sound(audio_path2)
