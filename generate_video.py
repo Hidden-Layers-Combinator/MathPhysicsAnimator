@@ -104,6 +104,7 @@ def generate_video(equation):
       vertex = Dot(axes.coords_to_point(vertex_x, vertex_y), color=GREEN)
       vertex_label = Text(f"Vertex ({vertex_x},{vertex_y})").scale(0.3)
       vertex_label.next_to(vertex, DOWN)
+      d_text=Text(f"Discriminant = {discriminant}").scale(0.6).to_corner(DOWN+RIGHT,buff=0.6)
       #roots
       if(len(roots)==1):
         root1=Dot(axes.coords_to_point(roots[0],0),color=YELLOW)
@@ -114,10 +115,9 @@ def generate_video(equation):
         root2=Dot(axes.coords_to_point(roots[1],0),color=YELLOW)
         root2_text=Text(f"({roots[1]},{0})").next_to(root2,UP).scale(0.4)
       else:
-        r_text=Text(f"Roots = {roots}").scale(0.6).to_corner(DOWN+RIGHT,buff=0.6)
+        r_text=Text(f"Roots = {roots}").scale(0.6).next_to(UP,buff=0.6)
     
       #discriminant
-      d_text=Text(f"Discriminant = {discriminant}").scale(0.6).to_corner(DOWN+RIGHT,buff=0.6)
 
       #Animation
       self.add_sound(combined_audio_path)
