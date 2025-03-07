@@ -46,26 +46,37 @@ def generate_video(equation):
   d=f'The discriminant is {discriminant}. '
   draw='Lets Draw the graph.'
   script=[Intro,given,vertex+d+roots_str]
+
+  unique_id = time.time()
+  audio_path1 = f"/tmp/audio1_{unique_id}.mp3"
+  audio_path2 = f"/tmp/audio2_{unique_id}.mp3"
+  audio_path3 = f"/tmp/audio3_{unique_id}.mp3"
+  audio_path4 = f"/tmp/audio4_{unique_id}.mp3"
   #first audio
-  audio_path1="first.mp3"
   first = gTTS(text=script[0], lang='en')
   first.save(audio_path1)
   #second audio
-  audio_path2="second.mp3"
   second = gTTS(text=script[1], lang='en')
   second.save(audio_path2)
   #third audio
-  audio_path3="third.mp3"
   third=gTTS(text=script[2],lang='en')
   third.save(audio_path3)
   #fourth audio
-  audio_path4="fourth.mp3"
   fourth=gTTS(text=draw,lang='en')
   fourth.save(audio_path4)
   audio_1 = AudioSegment.from_mp3(audio_path1)
   audio_2=AudioSegment.from_mp3(audio_path2)
   audio_3=AudioSegment.from_mp3(audio_path3)
   audio_4=AudioSegment.from_mp3(audio_path4)
+
+  # Combine audio with silence to match animation timing
+  combined_audio = audio_1 + AudioSegment.silent(duration=1000)  # 1s pause after intro
+  combined_audio += audio_2 
+  combined_audio += audio_4+AudioSegment.silent(duration=4000)
+  combined_audio += audio_3)
+  
+  combined_audio_path = f"/tmp/combined_{unique_id}.mp3"
+  combined_audio.export(combined_audio_path, format="mp3")
   class QuadraticGraph(MovingCameraScene):
     def construct(self):
       audio_length_1=len(audio_1)/1000
@@ -109,15 +120,15 @@ def generate_video(equation):
       d_text=Text(f"Discriminant = {discriminant}").scale(0.6).to_corner(DOWN+RIGHT,buff=0.6)
 
       #Animation
-      self.add_sound(audio_path1)
+      self.add_sound("/tmp/combined_{unique_id}.mp3")
       self.play(AddTextLetterByLetter(intro_text),run_time=audio_length_1)
       self.play(FadeOut(intro_text))
-      self.add_sound(audio_path2)
+      # self.add_sound(audio_path2)
       self.play(Write(a_text), Write(b_text), Write(c_text), run_time=audio_length_2)
-      self.add_sound(audio_path4)
+      # self.add_sound(audio_path4)
       self.play(Create(axes), Write(x_label),Write(y_label),run_time=2)
       self.play(Create(graph),run_time=3)
-      self.add_sound(audio_path3)
+      # self.add_sound(audio_path3)
       self.play(
             self.camera.frame.animate.set_width(2).move_to(vertex.get_center()),
             run_time=1
