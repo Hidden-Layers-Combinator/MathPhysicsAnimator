@@ -6,7 +6,7 @@ from generate_video import generate_video
 
 st.title("Quadratic Equation Graph Generator")
 
-equation = st.text_input("Enter a quadratic equation (e.g., x^2 + 2x + 1):")
+equation = st.text_input("Enter a quadratic equation (e.g., x^2 + 2*x + 1):")
 if st.button("Generate Video"):
     if equation:
       placeholder = st.empty()
