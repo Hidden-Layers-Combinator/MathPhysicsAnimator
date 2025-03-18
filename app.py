@@ -6,7 +6,7 @@ from generate_video import generate_video
 
 st.title("Quadratic Equation Graph Generator")
 
-equation = st.text_input("Enter a quadratic equation (e.g., x^2 + 2x + 1):")
+equation = st.text_input("Enter a quadratic equation (e.g., x^2 + 2*x + 1):")
 if st.button("Generate Video"):
     if equation:
       placeholder = st.empty()
@@ -16,7 +16,11 @@ if st.button("Generate Video"):
         video_path,audio_path1,audio_path2,audio_path3,audio_path4= generate_video(equation)
 
             # Display video
-        st.video(video_path)
+        if os.path.exists(video_path):
+            st.video(video_path)
+        else:
+            st.error("Error: Video file not found!")
+
             # Offer download
         with open(video_path, "rb") as f:
                 st.download_button("Download Video", f, file_name="graph.mp4")

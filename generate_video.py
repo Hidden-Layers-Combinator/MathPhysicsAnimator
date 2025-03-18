@@ -35,7 +35,7 @@ def generate_video(equation):
     wordEquation+=" plus "+str(c)
   elif c<0:
     wordEquation+=" minus "+str(abs(c))
-  Intro=f'Welcome to GraphCaster. I am your instructor jojo. You have given the equation {wordEquation}. Lets first note the coefficients '
+  Intro=f'Welcome to Animath. I am your instructor jojo. You have given the equation {wordEquation}. Lets first note the coefficients '
   roots_str = (
         f" It has two real roots at x equals {roots[0]:.1f} and {roots[1]:.1f}." if len(roots) == 2 else
         f" It has one real root at x equals {roots[0]:.1f}." if len(roots) == 1 else
@@ -46,26 +46,37 @@ def generate_video(equation):
   d=f'The discriminant is {discriminant}. '
   draw='Lets Draw the graph.'
   script=[Intro,given,vertex+d+roots_str]
+
+  unique_id = time.time()
+  audio_path1 = f"/tmp/audio1_{unique_id}.mp3"
+  audio_path2 = f"/tmp/audio2_{unique_id}.mp3"
+  audio_path3 = f"/tmp/audio3_{unique_id}.mp3"
+  audio_path4 = f"/tmp/audio4_{unique_id}.mp3"
   #first audio
-  audio_path1="first.mp3"
   first = gTTS(text=script[0], lang='en')
   first.save(audio_path1)
   #second audio
-  audio_path2="second.mp3"
   second = gTTS(text=script[1], lang='en')
   second.save(audio_path2)
   #third audio
-  audio_path3="third.mp3"
   third=gTTS(text=script[2],lang='en')
   third.save(audio_path3)
   #fourth audio
-  audio_path4="fourth.mp3"
   fourth=gTTS(text=draw,lang='en')
   fourth.save(audio_path4)
   audio_1 = AudioSegment.from_mp3(audio_path1)
   audio_2=AudioSegment.from_mp3(audio_path2)
   audio_3=AudioSegment.from_mp3(audio_path3)
   audio_4=AudioSegment.from_mp3(audio_path4)
+
+  # Combine audio with silence to match animation timing
+  combined_audio = audio_1 + AudioSegment.silent(duration=1000)  # 1s pause after intro
+  combined_audio += audio_2 
+  combined_audio += audio_4+AudioSegment.silent(duration=3500)
+  combined_audio += audio_3
+  
+  combined_audio_path = f"/tmp/combined_{unique_id}.mp3"
+  combined_audio.export(combined_audio_path, format="mp3")
   class QuadraticGraph(MovingCameraScene):
     def construct(self):
       audio_length_1=len(audio_1)/1000
@@ -73,52 +84,53 @@ def generate_video(equation):
       audio_length_3=len(audio_3)/1000
       audio_length_4=len(audio_4)/1000
       #Intro
-      intro_text=Text(f'Welcome to GraphCaster. I am your instructor jojo. You have given the equation {wordEquation}. Lets first note the coefficients').scale(0.3)
+      intro_text=Text(f'Welcome to Animath. I am your instructor jojo. You have given the equation {wordEquation}. Lets first note the coefficients').scale(0.3)
       #Given of Equation
-
-      a_text = Tex(f"a = {a}", color=WHITE).to_corner(UP + LEFT,buff=0.6)
-      b_text = Tex(f"b = {b}", color=WHITE).next_to(a_text, DOWN, aligned_edge=LEFT, buff=0.6)
-      c_text = Tex(f"c = {c}", color=WHITE).next_to(b_text, DOWN, aligned_edge=LEFT,buff=0.6)
+      a_text = Text(f"a = {a}", color=WHITE).to_corner(UP + LEFT, buff=0.5)
+      b_text = Text(f"b = {b}", color=WHITE).next_to(a_text, DOWN, aligned_edge=LEFT, buff=0.6)
+      c_text = Text(f"c = {c}", color=WHITE).next_to(b_text, DOWN, aligned_edge=LEFT,buff=0.6)
 
       #Axes & Graph of equation
       axes = Axes(x_range=[-5, 5, 1], y_range=[-5, 5, 1], x_length=6, y_length=6)
-      labels = axes.get_axis_labels(x_label="x", y_label="f(x)")
+      x_label = Text("x", font_size=24).next_to(axes.x_axis, RIGHT)
+      y_label = Text("f(x)", font_size=24).next_to(axes.y_axis, UP)
+
       graph = axes.plot(lambda x: a * x**2 + b * x + c, color=BLUE)
 
       #grouping
-      graph_group = VGroup(axes, labels, graph,a_text,b_text,c_text)
+      graph_group = VGroup(axes, x_label, y_label, graph, a_text, b_text, c_text)
 
       #vertex
       vertex = Dot(axes.coords_to_point(vertex_x, vertex_y), color=GREEN)
-      vertex_label = MathTex(r"Vertex ({},{})".format(vertex_x,vertex_y)).scale(0.3)
+      vertex_label = Text(f"Vertex ({vertex_x},{vertex_y})").scale(0.3)
       vertex_label.next_to(vertex, DOWN)
+      d_text=Text(f"Discriminant = {discriminant}").scale(0.6).to_corner(DOWN+RIGHT,buff=0.6)
       #roots
       if(len(roots)==1):
         root1=Dot(axes.coords_to_point(roots[0],0),color=YELLOW)
-        root1_text=MathTex(r"({},{})".format(roots[0],0)).next_to(root1,UP).scale(0.4)
+        root1_text=Text(f"({roots[0]},{0})").next_to(root1,UP).scale(0.4)
       elif(len(roots)==2):
         root1=Dot(axes.coords_to_point(roots[0],0),color=YELLOW)
-        root1_text=MathTex(r"({},{})".format(roots[0],0)).next_to(root1,UP).scale(0.4)
+        root1_text=Text(f"({roots[0]},{0})").next_to(root1,UP).scale(0.4)
         root2=Dot(axes.coords_to_point(roots[1],0),color=YELLOW)
-        root2_text=MathTex(r"({},{})".format(roots[1],0)).next_to(root2,UP).scale(0.4)
+        root2_text=Text(f"({roots[1]},{0})").next_to(root2,UP).scale(0.4)
       else:
-        r_text=MathTex(r"Roots = {}".format(roots)).scale(0.6).to_corner(DOWN+RIGHT,buff=0.6)
+        r_text=Text(f"Roots = {roots}").scale(0.6).next_to(UP,buff=0.6)
     
       #discriminant
-      d_text=MathTex(r"Discriminant = {}".format(discriminant)).scale(0.6).to_corner(DOWN+RIGHT,buff=0.6)
 
       #Animation
-      self.add_sound(audio_path1)
-      self.play(Write(intro_text),run_time=audio_length_1)
+      self.add_sound(combined_audio_path)
+      self.play(AddTextLetterByLetter(intro_text),run_time=audio_length_1)
       self.play(FadeOut(intro_text))
-      self.add_sound(audio_path2)
+      # self.add_sound(audio_path2)
       self.play(Write(a_text), Write(b_text), Write(c_text), run_time=audio_length_2)
-      self.add_sound(audio_path4)
-      self.play(Create(axes), Write(labels),run_time=2)
+      # self.add_sound(audio_path4)
+      self.play(Create(axes), Write(x_label),Write(y_label),run_time=2)
       self.play(Create(graph),run_time=3)
-      self.add_sound(audio_path3)
+      # self.add_sound(audio_path3)
       self.play(
-            self.camera.animate.set_width(2).move_to(vertex.get_center()),
+            self.camera.frame.animate.set_width(2).move_to(vertex.get_center()),
             run_time=1
       )
       self.play(Create(vertex),run_time=1)
@@ -174,11 +186,11 @@ def generate_video(equation):
       else:
         self.play(Write(r_text))
       self.wait(3)
-  video_path = "/content/media/videos/1080p60/QuadraticGraph.mp4"
-  config.renderer = "cairo"
+  video_path = "/tmp/QuadraticGraph.mp4"
+  config["output_file"] = video_path  # Tell Manim where to save the video
   scene = QuadraticGraph()
   scene.render(preview=False)
-  return video_path,audio_path1,audio_path2,audio_path3,audio_path4
+  return video_path, audio_path1, audio_path2, audio_path3, audio_path4
 
 
 
