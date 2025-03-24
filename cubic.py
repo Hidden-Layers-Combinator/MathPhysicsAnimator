@@ -1,20 +1,26 @@
 from manim import *
 import numpy as np
 
-class CubicFunctionExplanation(Scene):
+class CubicFunctionExplanation(MovingCameraScene):
     def construct(self):
         # Configuration
         axes_config = {
             "x_range": [-5, 5, 1],
             "y_range": [-8, 8, 2],
             "axis_config": {"color": BLUE},
-            "x_axis_config": {"numbers_to_include": np.arange(-4, 5, 2)},
-            "y_axis_config": {"numbers_to_include": np.arange(-8, 6, 2)},
+            "x_axis_config": {"numbers_to_include": np.arange(-4, 5, 2),
+                              "font_size":18
+                            },
+            "y_axis_config": {"numbers_to_include": np.arange(-8, 6, 2),
+                              "font_size":18
+                            },
         }
         
         # Create coordinate system
         axes = Axes(**axes_config)
-        axes_labels = axes.get_axis_labels(x_label="x", y_label="f(x)").scale(0.5)
+        x_label = MathTex("x", font_size=20).next_to(axes.x_axis.get_end(), RIGHT)
+        y_label = MathTex("f(x)", font_size=20).next_to(axes.y_axis.get_end(), UP)
+        axes_labels = VGroup(x_label, y_label)
         
         # Initialize parameters for the cubic function
         a, b, c, d = 1, 0, -3, 0
@@ -36,7 +42,7 @@ class CubicFunctionExplanation(Scene):
             title.animate.scale(0.8333).to_edge(UP),  # 0.8333 = 1/1.2 to return to original size
             FadeOut(subtitle),
             FadeOut(title),
-            run_time=0.7
+            run_time=1
         )
         
         # Display coordinate system
@@ -53,7 +59,7 @@ class CubicFunctionExplanation(Scene):
 
         # Create function graph
         function_label = MathTex(f"f(x) = {a}x^3 {'' if b == 0 else '+ ' + str(b) + 'x^2'} {'' if c == 0 else ('- ' if c < 0 else '+ ') + str(abs(c)) + 'x'} {'' if d == 0 else ('- ' if d < 0 else '+ ') + str(abs(d))}")
-        function_label.to_edge(UP)
+        function_label.to_edge(UP).shift(UP*0.5)
         graph = axes.plot(lambda x: cubic_function(x, a, b, c, d), color=GREEN)
 
         
@@ -61,7 +67,7 @@ class CubicFunctionExplanation(Scene):
         self.play(Create(graph))
         self.play(Write(function_label))
         self.wait(1)
-        
+        self.play(FadeOut(function_label))
         # 1. Shape and General Behavior Based on Leading Coefficient
         # shape_title = Text("Shape and General Behavior", font_size=32)
         # shape_title.to_corner(UL)
@@ -109,27 +115,27 @@ class CubicFunctionExplanation(Scene):
             FadeOut(left_text)
         )
         
-        # Reset to standard form for next explanations
-        a, b, c, d = 1, 0, -3, 0
-        standard_graph = axes.plot(lambda x: cubic_function(x, a, b, c, d), color=GREEN)
-        standard_function_label = MathTex(f"f(x) = {a}x^3 {'' if b == 0 else '+ ' + str(b) + 'x^2'} {'' if c == 0 else ('- ' if c < 0 else '+ ') + str(abs(c)) + 'x'} {'' if d == 0 else ('- ' if d < 0 else '+ ') + str(abs(d))}")
-        standard_function_label.next_to(title, DOWN)
+        # # Reset to standard form for next explanations
+        # a, b, c, d = 1, 0, -3, 0
+        # standard_graph = axes.plot(lambda x: cubic_function(x, a, b, c, d), color=GREEN)
+        # standard_function_label = MathTex(f"f(x) = {a}x^3 {'' if b == 0 else '+ ' + str(b) + 'x^2'} {'' if c == 0 else ('- ' if c < 0 else '+ ') + str(abs(c)) + 'x'} {'' if d == 0 else ('- ' if d < 0 else '+ ') + str(abs(d))}")
+        # standard_function_label.next_to(title, DOWN)
         
-        self.play(
-            Transform(graph, standard_graph),
-            Transform(function_label, standard_function_label)
-        )
+        # self.play(
+        #     Transform(graph, standard_graph),
+        #     Transform(function_label, standard_function_label)
+        # )
         
         # 2. Number of Real Roots
         roots_title = Text("Real Roots", font_size=32)
-        roots_title.to_corner(UL)
+        roots_title.to_edge(UP).shift(UP*0.5)
         self.play(Write(roots_title))
         
         # Find roots of the current function
         roots = [np.sqrt(3), 0, -np.sqrt(3)]  # Roots of x³-3x
         root_dots = []
         root_labels = []
-        
+        graph_group=VGroup(axes,x_label,y_label)
         # Animate finding the roots
         for i, root in enumerate(roots):
             dot = Dot(axes.c2p(root, 0), color=RED)
@@ -140,11 +146,17 @@ class CubicFunctionExplanation(Scene):
             root_labels.append(label)
             
             self.play(
-                Create(dot),
-                Write(label)
+                    self.camera.frame.animate.set_width(2).move_to(dot.get_center()),
+                    Create(dot),
+                    Write(label),
+                    run_time=1,
             )
-        
-        self.wait(1)
+            self.wait()
+            self.play(
+                    self.camera.frame.animate.set_width(graph_group.width * 1.5).move_to(axes.get_center()),
+                    run_time=0.5,
+            )
+            self.wait()
         
         # 3. Turning Points (Local Maxima and Minima)
         self.play(
@@ -212,28 +224,28 @@ class CubicFunctionExplanation(Scene):
             self.wait(0.5)
             
             # Moving tangent line animation after turning point
-            for x in np.linspace(tp, tp+0.5, 5):
-                y = cubic_function(x, a, b, c, d)
-                slope = derivative(x)
+            # for x in np.linspace(tp, tp+0.5, 5):
+            #     y = cubic_function(x, a, b, c, d)
+            #     slope = derivative(x)
                 
-                # Line equation: y - y1 = m(x - x1)
-                def tangent_at_x(t):
-                    return y + slope * (t - x)
+            #     # Line equation: y - y1 = m(x - x1)
+            #     def tangent_at_x(t):
+            #         return y + slope * (t - x)
                 
-                temp_tangent = axes.plot(tangent_at_x, x_range=[x-1, x+1], color=BLUE)
-                slope_label = MathTex(f"\\text{{Slope}} = {slope:.2f}", font_size=20, color=BLUE)
-                slope_label.next_to(axes.c2p(x, y), UR)
+            #     temp_tangent = axes.plot(tangent_at_x, x_range=[x-1, x+1], color=BLUE)
+            #     slope_label = MathTex(f"\\text{{Slope}} = {slope:.2f}", font_size=20, color=BLUE)
+            #     slope_label.next_to(axes.c2p(x, y), UR)
                 
-                self.play(
-                    Create(temp_tangent),
-                    Write(slope_label),
-                    run_time=0.3
-                )
-                self.play(
-                    FadeOut(temp_tangent),
-                    FadeOut(slope_label),
-                    run_time=0.3
-                )
+            #     self.play(
+            #         Create(temp_tangent),
+            #         Write(slope_label),
+            #         run_time=0.3
+            #     )
+            #     self.play(
+            #         FadeOut(temp_tangent),
+            #         FadeOut(slope_label),
+            #         run_time=0.3
+            #     )
             
             if tp == -1:
                 max_min_label = Text("Local Maximum", font_size=20, color=YELLOW)
@@ -446,8 +458,9 @@ class CubicFunctionExplanation(Scene):
         summary_points.next_to(summary_title, DOWN, buff=0.5)
         
         self.play(
-            FadeOut(title),
-            FadeOut(function_label),
+            FadeOut(graph_group)
+        )
+        self.play(
             FadeIn(summary_title),
         )
         
@@ -460,9 +473,6 @@ class CubicFunctionExplanation(Scene):
         self.play(
             FadeOut(summary_title),
             FadeOut(summary_points),
-            FadeOut(axes),
-            FadeOut(axes_labels),
-            FadeOut(graph)
         )
         
         self.wait(1)
