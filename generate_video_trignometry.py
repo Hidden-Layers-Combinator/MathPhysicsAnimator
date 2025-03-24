@@ -1,394 +1,470 @@
-from gtts import gTTS
-from sympy import symbols, solve, sympify, diff, discriminant
-import numpy as np
 from manim import *
-from pydub import AudioSegment
+import numpy as np
+from sympy import *
+import re
 
-def generate_video_cubic(equation):
-    # Parse and analyze the cubic equation
-    x = symbols('x')
-    eq = sympify(equation)
-    
-    # Extract coefficients (a*x^3 + b*x^2 + c*x + d)
-    coeffs = eq.as_poly(x).all_coeffs()
-    while len(coeffs) < 4:  # Pad with zeros if lower degree
-        coeffs.insert(0, 0)
-    a, b, c, d = coeffs
-    
-    # Handle degenerate case (not a cubic)
-    is_cubic = (a != 0)
-    
-    # Find roots
-    roots = list(solve(eq, x))
-    real_roots = [float(root.evalf()) for root in roots if root.is_real]
-    complex_roots = [root for root in roots if not root.is_real]
-    from collections import Counter
-    roots_dict = dict(Counter(roots))
-    
-    # Find derivative for critical points
-    derivative = diff(eq, x)
-    critical_points = solve(derivative, x)
-    real_critical_points = [float(cp.evalf()) for cp in critical_points if cp.is_real]
-    
-    # Find second derivative for inflection point
-    second_derivative = diff(derivative, x)
-    inflection_points = solve(second_derivative, x)
-    real_inflection_points = [float(ip.evalf()) for ip in inflection_points if ip.is_real]
-    
-    # Dynamic axis scaling
-    key_points = real_roots + real_critical_points + real_inflection_points
-    if not key_points:
-        x_range = [-5, 5]
-        y_range = [-8, 8]
-    else:
-        x_min, x_max = min(key_points) - 2, max(key_points) + 2
-        x_range = [x_min, x_max]
-        y_vals = [float(eq.subs(x, pt).evalf()) for pt in np.linspace(x_min, x_max, 100)]
-        y_range = [min(y_vals) - 2, max(y_vals) + 2]
-    
-    # Create verbal equation for narration
-    wordEquation = ''
-    if a == 1:
-        wordEquation += "x cubed "
-    elif a == -1:
-        wordEquation += "minus x cubed "
-    elif a < 0:
-        wordEquation += f"minus {abs(a)} x cubed "
-    elif a > 0:
-        wordEquation += f"{a} x cubed "
-    
-    if b == 1:
-        wordEquation += "plus x squared "
-    elif b == -1:
-        wordEquation += "minus x squared "
-    elif b > 0:
-        wordEquation += f"plus {b} x squared "
-    elif b < 0:
-        wordEquation += f"minus {abs(b)} x squared "
-    
-    if c == 1:
-        wordEquation += "plus x "
-    elif c == -1:
-        wordEquation += "minus x "
-    elif c > 0:
-        wordEquation += f"plus {c} x "
-    elif c < 0:
-        wordEquation += f"minus {abs(c)} x "
-    
-    if d > 0:
-        wordEquation += f"plus {d}"
-    elif d < 0:
-        wordEquation += f"minus {abs(d)}"
-    elif len(coeffs) == 1 and a == 0:
-        wordEquation = "zero"
-    
-    # Generate script parts
-    intro = f"Welcome to Animation. I am your instructor Jojo. You have given the equation {wordEquation}."
-    
-    # Format roots for narration
-    roots_str = ""
-    if not is_cubic:
-        roots_str = "This is not a cubic equation but a lower-degree polynomial."
-    elif len(real_roots) == 3 and len(roots_dict) == 1:  # Triple root
-        roots_str = f"It has a triple real root at x equals {float(real_roots[0]):.2f}."
-    elif len(real_roots) == 3:  # Three distinct roots
-        roots_str = f"It has three real roots at x equals {float(real_roots[0]):.2f}, {float(real_roots[1]):.2f}, and {float(real_roots[2]):.2f}."
-    elif len(real_roots) == 2:  # Double root + distinct root
-        repeated_root = [r.evalf() for r in roots if roots_dict[r] == 2][0]
-        distinct_root = [r.evalf() for r in roots if roots_dict[r] == 1][0]
-        roots_str = f"It has a double root at x equals {float(repeated_root):.2f} and a distinct root at x equals {float(distinct_root):.2f}."
-    elif len(real_roots) == 1:
-        roots_str = f"It has one real root at x equals {float(real_roots[0]):.2f} and two complex roots."
-    else:
-        roots_str = f"It has no real roots, only three complex roots."
-    
-    # Differentiation functions
-    def cubic_function(x):
-        return float((a * x**3 + b * x**2 + c * x + d).evalf())
-    
-    def diff_function(x):
-        return float((3 * a * x**2 + 2 * b * x + c).evalf())
-    
-    def second_diff_function(x):
-        return float((6 * a * x + 2 * b).evalf())
-    
-    # Format critical points for narration
-    critical_str = ""
-    if not is_cubic or a == 0 and b == 0:  # Linear or constant
-        critical_str = "There are no turning points for this non-cubic equation."
-    elif len(real_critical_points) == 2:
-        cp1_x, cp2_x = sorted(real_critical_points)
-        cp1_y = cubic_function(cp1_x)
-        cp2_y = cubic_function(cp2_x)
-        if second_diff_function(cp1_x) > 0:
-            critical_str = f"There are two turning points: a local minimum at x equals {cp1_x:.2f} with f(x) equals {cp1_y:.2f}, and a local maximum at x equals {cp2_x:.2f} with f(x) equals {cp2_y:.2f}."
-        else:
-            critical_str = f"There are two turning points: a local maximum at x equals {cp1_x:.2f} with f(x) equals {cp1_y:.2f}, and a local minimum at x equals {cp2_x:.2f} with f(x) equals {cp2_y:.2f}."
-    elif len(real_critical_points) == 1:
-        cp_x = real_critical_points[0]
-        cp_y = cubic_function(cp_x)
-        critical_str = f"There is one critical point at x equals {cp_x:.2f} with f(x) equals {cp_y:.2f}, a horizontal inflection due to a repeated root."
-    else:
-        critical_str = "There are no real turning points."
-    
-    # Format inflection point for narration
-    inflection_str = ""
-    if not is_cubic or a == 0 and b == 0:
-        inflection_str = "There is no inflection point for this non-cubic equation."
-    elif len(real_inflection_points) == 1:
-        inf_x = real_inflection_points[0]
-        inf_y = cubic_function(inf_x)
-        inflection_str = f"There is an inflection point at x equals {inf_x:.2f} with f(x) equals {inf_y:.2f}, where the concavity changes."
-    else:
-        inflection_str = "Unexpectedly, no real inflection points were found."
-    
-    # Describe end behavior
-    if a > 0:
-        behavior = "As x approaches positive infinity, f(x) approaches positive infinity. As x approaches negative infinity, f(x) approaches negative infinity."
-    elif a < 0:
-        behavior = "As x approaches positive infinity, f(x) approaches negative infinity. As x approaches negative infinity, f(x) approaches positive infinity."
-    elif b > 0:
-        behavior = "This is a quadratic with end behavior rising to positive infinity on both sides."
-    elif b < 0:
-        behavior = "This is a quadratic with end behavior falling to negative infinity on both sides."
-    else:
-        behavior = "This is a linear or constant function with no cubic behavior."
-    
-    # Final narration for drawing
-    draw = "Let's draw and examine this equation graph!"
-    slope = "Now visualize the slope of the graph."
-    script = [intro, draw, behavior, roots_str, critical_str, inflection_str, slope]
-    
-    # Generate audio files
-    audio_paths = []
-    for i, text in enumerate(script):
-        audio_path = f"audio_{i+1}.mp3"
-        audio = gTTS(text=text, lang='en')
-        audio.save(audio_path)
-        audio_paths.append(audio_path)
-    
-    # Load audio segments for timing
-    audio_segments = [AudioSegment.from_mp3(path) for path in audio_paths]
-    audio_lengths = [len(segment)/1000 for segment in audio_segments]  # Convert to seconds
-
-    class CubicFunctionExplanation(MovingCameraScene):
-        def construct(self):
-            # Configuration
-            axes_config = {
-                "x_range": [x_range[0], x_range[1], 1],
-                "y_range": [y_range[0], y_range[1], max(2, (y_range[1] - y_range[0]) / 4)],
-                "axis_config": {"color": BLUE},
-                "x_axis_config": {"numbers_to_include": np.arange(int(x_range[0]), int(x_range[1]) + 1, 2), "font_size": 18},
-                "y_axis_config": {"numbers_to_include": np.arange(int(y_range[0]), int(y_range[1]) + 1, max(2, int((y_range[1] - y_range[0]) / 4))), "font_size": 18},
-            }
-            
-            # Create coordinate system
-            axes = Axes(**axes_config)
-            x_label = MathTex("x", font_size=20).next_to(axes.x_axis.get_end(), RIGHT)
-            y_label = MathTex("f(x)", font_size=20).next_to(axes.y_axis.get_end(), UP)
-            axes_labels = VGroup(x_label, y_label)
-            
-            # Title
-            title = Text("Understanding Cubic Equations" if is_cubic else "Understanding Polynomials", font_size=48)
-            subtitle = Text(f"f(x) = {equation}", font_size=36)
-            subtitle.next_to(title, DOWN)
-            self.add_sound(audio_paths[0])
-            self.play(AddTextLetterByLetter(title), run_time=audio_lengths[0]*0.6)
-            self.play(AddTextLetterByLetter(subtitle), run_time=audio_lengths[0]*0.4)
-            self.wait(0.5)
-            self.play(title.animate.scale(1.2), subtitle.animate.scale(1.2), run_time=0.5)
-            self.play(title.animate.to_edge(UP).scale(0.8333).set_opacity(0),
-                      subtitle.animate.to_edge(DOWN).scale(0.8333).set_opacity(0), run_time=1)
-            
-            # Display coordinate system
-            self.add_sound(audio_paths[1])
-            self.play(Create(axes), Write(axes_labels))
-            self.wait(1)
-            
-            # Create function graph
-            function_label = MathTex(f"f(x) = {equation}")
-            function_label.to_corner(UL)
-            graph = axes.plot(cubic_function, color=GREEN)
-            self.play(Create(graph))
-            self.play(Write(function_label))
-            self.wait(1)
-            self.play(FadeOut(function_label))
-            
-            # Create arrows showing behavior at infinities
-            if a > 0:
-                right_arrow = Arrow(axes.c2p(x_range[1] - 1, y_range[1] - 1), axes.c2p(x_range[1], y_range[1]), color=YELLOW)
-                left_arrow = Arrow(axes.c2p(x_range[0] + 1, y_range[0] + 1), axes.c2p(x_range[0], y_range[0]), color=YELLOW)
-                right_text = Text("→ +∞", font_size=20, color=YELLOW).next_to(right_arrow, RIGHT)
-                left_text = Text("→ -∞", font_size=20, color=YELLOW).next_to(left_arrow, LEFT)
-            elif a < 0:
-                right_arrow = Arrow(axes.c2p(x_range[1] - 1, y_range[0] + 1), axes.c2p(x_range[1], y_range[0]), color=YELLOW)
-                left_arrow = Arrow(axes.c2p(x_range[0] + 1, y_range[1] - 1), axes.c2p(x_range[0], y_range[1]), color=YELLOW)
-                right_text = Text("→ -∞", font_size=20, color=YELLOW).next_to(right_arrow, RIGHT)
-                left_text = Text("→ +∞", font_size=20, color=YELLOW).next_to(left_arrow, LEFT)
-            else:  # Quadratic or lower
-                if b > 0:
-                    right_arrow = Arrow(axes.c2p(x_range[1] - 1, y_range[1] - 1), axes.c2p(x_range[1], y_range[1]), color=YELLOW)
-                    left_arrow = Arrow(axes.c2p(x_range[0] + 1, y_range[1] - 1), axes.c2p(x_range[0], y_range[1]), color=YELLOW)
-                    right_text = Text("→ +∞", font_size=20, color=YELLOW).next_to(right_arrow, RIGHT)
-                    left_text = Text("→ +∞", font_size=20, color=YELLOW).next_to(left_arrow, LEFT)
-                elif b < 0:
-                    right_arrow = Arrow(axes.c2p(x_range[1] - 1, y_range[0] + 1), axes.c2p(x_range[1], y_range[0]), color=YELLOW)
-                    left_arrow = Arrow(axes.c2p(x_range[0] + 1, y_range[0] + 1), axes.c2p(x_range[0], y_range[0]), color=YELLOW)
-                    right_text = Text("→ -∞", font_size=20, color=YELLOW).next_to(right_arrow, RIGHT)
-                    left_text = Text("→ -∞", font_size=20, color=YELLOW).next_to(left_arrow, LEFT)
-                else:
-                    right_arrow = left_arrow = right_text = left_text = VGroup()  # No arrows for linear/constant
-            
-            self.add_sound(audio_paths[2])
-            self.play(Create(right_arrow), Create(left_arrow), Write(right_text), Write(left_text), run_time=audio_lengths[2])
-            self.play(FadeOut(right_arrow), FadeOut(left_arrow), FadeOut(right_text), FadeOut(left_text))
-            
-            # Roots
-            roots_title = Text("Roots", font_size=32).to_corner(UL)
-            self.play(Write(roots_title))
-            self.add_sound(audio_paths[3])
-            root_dots = []
-            root_labels = []
-            graph_group = VGroup(axes, x_label, y_label, graph)
-            if real_roots:
-                for i, root in enumerate(sorted(set(real_roots))):
-                    dot = Dot(axes.c2p(root, 0), color=RED)
-                    multiplicity = roots_dict.get(root, 1)
-                    label = MathTex(f"x_{i+1} = {root:.2f}" + (f" (m={multiplicity})" if multiplicity > 1 else ""), color=RED, font_size=24).next_to(dot, DOWN)
-                    root_dots.append(dot)
-                    root_labels.append(label)
-                    self.play(self.camera.frame.animate.set_width(2).move_to(dot.get_center()), Create(dot), Write(label), run_time=1)
-                    self.wait()
-                    self.play(self.camera.frame.animate.set_width(graph_group.width * 1.3).move_to(axes.get_center()), run_time=0.5)
-            else:
-                no_roots_text = Text("No real roots for this equation", color=RED, font_size=24).next_to(axes.c2p(0, 0), DOWN)
-                self.play(Write(no_roots_text))
-                self.wait(1)
-                self.play(FadeOut(no_roots_text))
-            self.play(*[FadeOut(obj) for obj in root_dots + root_labels + [roots_title]])
-            
-            # Turning Points
-            turning_points_title = Text("Turning Points", font_size=32).to_corner(UL)
-            self.add_sound(audio_paths[4])
-            self.play(Write(turning_points_title))
-            if real_critical_points:
-                for tp in sorted(real_critical_points):
-                    y_tp = cubic_function(tp)
-                    tp_dot = Dot(axes.c2p(tp, y_tp), color=YELLOW)
-                    tp_label = MathTex(f"({tp:.2f}, {y_tp:.2f})", color=YELLOW, font_size=24).next_to(tp_dot, UP)
-                    tangent_line = axes.plot(lambda x: y_tp, x_range=[tp - 1, tp + 1], color=YELLOW)
-                    self.play(Create(tp_dot), Write(tp_label))
-                    self.wait()
-                    self.play(Create(tangent_line))
-                    self.wait(0.3)
-                    sdd = second_diff_function(tp)
-                    if sdd > 0:
-                        max_min_label = Text("Local Minimum", font_size=20, color=YELLOW)
-                    elif sdd < 0:
-                        max_min_label = Text("Local Maximum", font_size=20, color=YELLOW)
+class TrigFunctionVisualizer(Scene):
+    def construct(self):
+        # This function can be updated with the user's equation
+        def get_user_equation():
+            # Replace this with actual user input
+            # Example: "2*sin(x) + cos(2*x)"
+            return "2*sin(x) + cos(2*x)"
+        
+        # Parse and process the user's equation
+        equation_str = get_user_equation()
+        
+        # Process the equation with sympy for analysis
+        x = Symbol('x')
+        expr = sympify(equation_str)
+        
+        # Function to convert sympy expression to a manim-compatible function
+        def expr_to_func(expression):
+            return lambda x_val: float(expression.subs(x, x_val))
+        
+        func = expr_to_func(expr)
+        
+        # Calculate important properties of the function
+        def find_period():
+            # Simplified approach for period finding
+            if "sin" in equation_str or "cos" in equation_str:
+                coefficients = []
+                for term in ["sin", "cos"]:
+                    # Pattern for forms like sin(2x) or sin(2*x)
+                    pattern = fr"{term}\((\d*\.?\d*)[\*]?x\)"
+                    matches = re.findall(pattern, equation_str)
+                    if matches:
+                        for match in matches:
+                            if match == '':
+                                coefficients.append(1.0)
+                            else:
+                                coefficients.append(float(match))
+                    # Pattern for forms like sin(x*2) or sin(x*2.5)
+                    pattern = fr"{term}\(x[\*]?(\d*\.?\d*)\)"
+                    matches = re.findall(pattern, equation_str)
+                    if matches:
+                        for match in matches:
+                            if match == '':
+                                coefficients.append(1.0)
+                            else:
+                                coefficients.append(float(match))
+                
+                if coefficients:
+                    if len(coefficients) > 1:
+                        from math import gcd
+                        from functools import reduce
+                        from fractions import Fraction
+                        
+                        # Convert coefficients to fractions to handle floats
+                        def lcm(a, b):
+                            # Convert to integers via fractions
+                            fa, fb = Fraction(a).limit_denominator(), Fraction(b).limit_denominator()
+                            num = abs(fa.numerator * fb.numerator)
+                            denom = gcd(fa.denominator, fb.denominator)
+                            lcm_num = num // gcd(num, denom)
+                            return lcm_num / (fa.denominator * fb.denominator // denom)
+                        
+                        def lcm_multiple(numbers):
+                            return reduce(lcm, numbers)
+                        
+                        coefficient = lcm_multiple(coefficients)
                     else:
-                        max_min_label = Text("Horizontal Inflection", font_size=20, color=YELLOW)
-                    max_min_label.next_to(tp_label, UP)
-                    self.play(Write(max_min_label))
-                    self.wait(1)
-                    self.play(FadeOut(tangent_line), FadeOut(tp_dot), FadeOut(tp_label), FadeOut(max_min_label))
-            else:
-                turning_point_label = Text('No turning points for this equation.').to_edge(DOWN)
-                self.play(Write(turning_point_label), run_time=audio_lengths[4])
-                self.wait(1)
-                self.play(FadeOut(turning_point_label))
-            self.play(FadeOut(turning_points_title))
-            
-            # Inflection Point
-            inflection_title = Text("Inflection Point", font_size=32).to_corner(UL)
-            self.add_sound(audio_paths[5])
-            self.play(Write(inflection_title))
-            if real_inflection_points:
-                inf_x = real_inflection_points[0]
-                inf_y = cubic_function(inf_x)
-                inflection_dot = Dot(axes.c2p(inf_x, inf_y), color=PURPLE)
-                inflection_label = MathTex(f"({inf_x:.2f}, {inf_y:.2f})", font_size=24, color=PURPLE).next_to(inflection_dot, UP)
-                slope_at_inflection = diff_function(inf_x)
-                tangent_line = axes.plot(lambda x: inf_y + slope_at_inflection * (x - inf_x), x_range=[inf_x - 2, inf_x + 2], color=PURPLE)
-                if a > 0:
-                    concave_up = axes.plot(cubic_function, x_range=[inf_x, x_range[1]], color=RED)
-                    concave_down = axes.plot(cubic_function, x_range=[x_range[0], inf_x], color=BLUE)
-                else:
-                    concave_down = axes.plot(cubic_function, x_range=[inf_x, x_range[1]], color=BLUE)
-                    concave_up = axes.plot(cubic_function, x_range=[x_range[0], inf_x], color=RED)
-                self.play(Create(inflection_dot), Write(inflection_label), Transform(graph, VGroup(concave_up, concave_down)))
-                self.play(Create(tangent_line))
-                concave_up_label = Text("Concave Up", font_size=20, color=RED).next_to(axes.c2p(inf_x + 1, cubic_function(inf_x + 1)), UR)
-                concave_down_label = Text("Concave Down", font_size=20, color=BLUE).next_to(axes.c2p(inf_x - 1, cubic_function(inf_x - 1)), UL)
-                self.play(Write(concave_up_label), Write(concave_down_label))
-                self.wait(2)
-                self.play(FadeOut(inflection_dot), FadeOut(inflection_label), FadeOut(tangent_line), FadeOut(concave_up_label), FadeOut(concave_down_label))
-            else:
-                inflection_message = Text("No inflection points exist", font_size=24, color=PURPLE).next_to(axes.get_center(), UP)
-                self.play(Write(inflection_message))
-                self.wait(1)
-                self.play(FadeOut(inflection_message))
-            self.play(FadeOut(inflection_title))
-            
-            # Rate of Change
-            rate_title = Text("Rate of Change", font_size=32).to_corner(UL)
-            self.add_sound(audio_paths[6])
-            self.play(Write(rate_title))
-            standard_graph = axes.plot(cubic_function, color=GREEN)
-            self.play(Transform(graph, standard_graph))
-            x_tracker = ValueTracker(x_range[0])
-            moving_dot = always_redraw(lambda: Dot(axes.c2p(x_tracker.get_value(), cubic_function(x_tracker.get_value())), color=YELLOW))
-            tangent_line = always_redraw(lambda: axes.plot(lambda t: cubic_function(x_tracker.get_value()) + diff_function(x_tracker.get_value()) * (t - x_tracker.get_value()), x_range=[x_tracker.get_value() - 1, x_tracker.get_value() + 1], color=YELLOW))
-            slope_label = always_redraw(lambda: MathTex(f"\\text{{Slope}} = {diff_function(x_tracker.get_value()):.2f}", font_size=24, color=YELLOW).next_to(moving_dot, UP))
-            self.play(Create(moving_dot), Create(tangent_line), Write(slope_label))
-            self.play(x_tracker.animate.set_value(x_range[1]), run_time=6, rate_func=linear)
-            self.wait(1)
-            self.play(FadeOut(moving_dot), FadeOut(tangent_line), FadeOut(slope_label), FadeOut(rate_title))
-            
-            # Area Under the Curve
-            area_title = Text("Area Under the Curve", font_size=32).to_corner(UL)
-            self.play(Write(area_title))
-            if len(real_roots) >= 2:
-                sorted_roots = sorted(real_roots)
-                for i in range(len(sorted_roots) - 1):
-                    left_bound, right_bound = sorted_roots[i], sorted_roots[i + 1]
-                    area = axes.get_area(graph, x_range=[left_bound, right_bound], color=BLUE if i % 2 == 0 else RED, opacity=0.5)
-                    self.play(Create(area))
-                    area_label = MathTex(f"\\int_{{{left_bound:.2f}}}^{{{right_bound:.2f}}} f(x) \\, dx", font_size=24).next_to(axes.c2p((left_bound + right_bound) / 2, -1), DOWN)
-                    self.play(Write(area_label))
-                    area_value = np.trapz([cubic_function(x) for x in np.linspace(left_bound, right_bound, 100)], np.linspace(left_bound, right_bound, 100))
-                    area_value_label = MathTex(f"\\text{{Area}} = {abs(area_value):.2f}", font_size=24, color=BLUE if i % 2 == 0 else RED).next_to(area_label, DOWN)
-                    self.play(Write(area_value_label))
-                    self.wait(1)
-                    self.play(FadeOut(area), FadeOut(area_label), FadeOut(area_value_label))
-            else:
-                area_message = Text("Not enough real roots to show a bounded area", font_size=24).next_to(axes.get_center(), DOWN)
-                self.play(Write(area_message))
-                self.wait(1)
-                self.play(FadeOut(area_message))
-            self.play(FadeOut(area_title))
-            
-            # Summary
-            summary_title = Text("Summary", font_size=36).to_edge(UP)
-            summary_points = [
-                Text(f"• End behavior: {behavior}", font_size=24),
-                Text(f"• Roots: {roots_str}", font_size=24),
-                Text(f"• Turning points: {critical_str}", font_size=24),
-                Text(f"• Inflection: {inflection_str}", font_size=24)
-            ]
-            summary_vgroup = VGroup(*summary_points).arrange(DOWN).next_to(summary_title, DOWN, buff=0.5)
-            self.play(FadeOut(graph_group))
-            self.play(FadeIn(summary_title))
-            for point in summary_points:
-                self.play(Write(point), run_time=0.5)
-            self.wait(2)
-            self.play(FadeOut(summary_title), FadeOut(summary_vgroup))
-            self.wait(1)
-    
-    scene = CubicFunctionExplanation()
-    scene.render()
+                        coefficient = coefficients[0]
+                    
+                    return 2 * PI / coefficient
+                return 2 * PI
+            elif "tan" in equation_str:
+                return PI
+            return 2 * PI  # Default
+        
+        period = find_period()
+        
+        # For analysis, evaluate over a range
+        x_vals = np.linspace(0, 2 * period, 1000)
+        y_vals = [func(x_val) for x_val in x_vals]
+        
+        # Find amplitude/range
+        min_y = min(y_vals)
+        max_y = max(y_vals)
+        amplitude = (max_y - min_y) / 2
 
-if __name__ == "__main__":
-    equation = "x^3-x^2+1"
-    generate_video_cubic(equation)
-    print("done")
+        # Find zeros (approximate)
+        zeros = []
+        for i in range(1, len(x_vals)):
+            if (y_vals[i-1] <= 0 and y_vals[i] >= 0) or (y_vals[i-1] >= 0 and y_vals[i] <= 0):
+                t = -y_vals[i-1] / (y_vals[i] - y_vals[i-1])
+                zero_x = x_vals[i-1] + t * (x_vals[i] - x_vals[i-1])
+                zeros.append(zero_x)
+        
+        # Find local maxima and minima (approximate)
+        critical_points = []
+        for i in range(1, len(y_vals) - 1):
+            if (y_vals[i-1] < y_vals[i] and y_vals[i] > y_vals[i+1]) or \
+               (y_vals[i-1] > y_vals[i] and y_vals[i] < y_vals[i+1]):
+                critical_points.append((x_vals[i], y_vals[i]))
+        
+        # Setup the visualization
+        x_min, x_max = 0, 2 * period
+        y_padding = max(1, (max_y - min_y) * 0.2)
+        y_min, y_max = min_y - y_padding, max_y + y_padding
+        
+        axes = Axes(
+            x_range=[x_min, x_max, PI/2],
+            y_range=[y_min, y_max, max(1, (max_y - min_y) / 4)],
+            axis_config={"color": BLUE},
+            # x_axis_config={
+            #     "numbers_to_include": np.arange(0, x_max + 0.1, PI/2),
+            #     "numbers_with_elongated_ticks": np.arange(0, x_max + 0.1, PI)
+            # }
+        )
+        
+        # Custom x-axis labels
+        x_labels = []
+        for i in range(int(x_max / (PI/2)) + 1):
+            value = i * PI/2
+            if i == 0:
+                label = MathTex("0")
+            elif i % 4 == 0:
+                label = MathTex(fr"{i // 2}\pi")
+            elif i % 2 == 0:
+                label = MathTex(fr"{i // 2}\pi")
+            else:
+                label = MathTex(fr"\frac{{{i}}}{{2}}\pi")
+            label.scale(0.5).next_to(axes.c2p(value, 0), DOWN)
+            x_labels.append(label)
+        
+        axes_labels = axes.get_axis_labels(
+            x_label=MathTex("x"),
+            y_label=MathTex("f(x)")
+        )
+        
+        # Title and equation display
+        title = Title(f"Trigonometric Function Analysis", include_underline=False)
+        equation_display = MathTex(f"f(x) = {equation_str}")
+        equation_display.next_to(title, DOWN)
+        
+        # Create the graph
+        graph = axes.plot(func, x_range=[x_min, x_max], color=WHITE)
+        graph_group=VGroup(graph,axes,axes_labels,x_labels).shift(DOWN*0.7)
+        
+        # Initial scene setup
+        self.play(
+            Write(title),
+            Write(equation_display)
+        )
+        self.play(
+            Create(axes),
+            *[Write(label) for label in x_labels],
+            Write(axes_labels)
+        )
+        self.wait(1)
+        
+        # Create the graph with a growing animation
+        self.play(Create(graph), run_time=2)
+        self.wait(1)
+        self.play(
+            FadeOut(title),
+            FadeOut(equation_display)
+        )
+        # 1. Periodicity
+        periodicity_title = Text("Periodicity", font_size=30).to_edge(UP)
+        self.play(Write(periodicity_title))
+        
+        period_segment = axes.plot(func, x_range=[0, period], color=YELLOW)
+        period_label = MathTex(fr"\text{{Period}} = {period/PI:.2f}\pi").next_to(periodicity_title, DOWN, aligned_edge=LEFT)
+        
+        self.play(Create(period_segment))
+        self.play(Write(period_label))
+        
+        second_period = axes.plot(func, x_range=[period, 2*period], color=GREEN)
+        self.play(Create(second_period))
+        
+        start_point = axes.c2p(0, func(0))
+        mid_point = axes.c2p(period, func(period))
+        end_point = axes.c2p(2*period, func(2*period))
+        
+        period_arrow1 = Arrow(start_point, mid_point, color=YELLOW, buff=0.1)
+        period_arrow2 = Arrow(mid_point, end_point, color=GREEN, buff=0.1)
+        
+        self.play(Create(period_arrow1))
+        self.play(Create(period_arrow2))
+        
+        self.wait(1)
+        
+        self.play(
+            FadeOut(period_segment),
+            FadeOut(period_arrow1),
+            FadeOut(period_arrow2),
+            FadeOut(second_period),
+            FadeOut(periodicity_title),
+            FadeOut(period_label)
+        )
+        
+        # 2. Amplitude and Range
+        amplitude_title = Text("Amplitude and Range", font_size=30).to_edge(UP)
+        self.play(Write(amplitude_title))
+        
+        range_text = MathTex(fr"\text{{Range}} = [{min_y:.2f}, {max_y:.2f}]")
+        amplitude_text = MathTex(fr"\text{{Amplitude}} \approx {amplitude:.2f}")
+        
+        range_text.next_to(amplitude_title, DOWN, aligned_edge=LEFT)
+        amplitude_text.next_to(range_text, DOWN, aligned_edge=LEFT)
+        
+        max_x = x_vals[np.argmax(y_vals)]
+        min_x = x_vals[np.argmin(y_vals)]
+        
+        max_point = Dot(axes.c2p(max_x, max_y), color=RED)
+        min_point = Dot(axes.c2p(min_x, min_y), color=BLUE)
+        
+        range_arrow = DoubleArrow(
+            axes.c2p(max_x, min_y),
+            axes.c2p(max_x, max_y),
+            color=YELLOW,
+            buff=0.1
+        )
+        
+        self.play(Write(range_text), Write(amplitude_text))
+        self.play(Create(max_point), Create(min_point))
+        self.play(Create(range_arrow))
+        
+        self.wait(1)
+        
+        self.play(
+            FadeOut(amplitude_title),
+            FadeOut(range_text),
+            FadeOut(amplitude_text),
+            FadeOut(max_point),
+            FadeOut(min_point),
+            FadeOut(range_arrow)
+        )
+        
+        # 3. Zeros (X-Intercepts)
+        zeros_title = Text("Zeros (X-Intercepts)", font_size=36).to_corner(UL)
+        self.play(Write(zeros_title))
+        
+        zero_dots = []
+        zero_labels = []
+        
+        visible_zeros = [z for z in zeros if x_min <= z <= x_max]
+        max_zeros_to_show = 5
+        if len(visible_zeros) > max_zeros_to_show:
+            visible_zeros = visible_zeros[:max_zeros_to_show]
+        
+        for i, zero in enumerate(visible_zeros):
+            dot = Dot(axes.c2p(zero, 0), color=RED)
+            zero_dots.append(dot)
+            
+            pi_multiple = zero / PI
+            if abs(pi_multiple - round(pi_multiple)) < 0.01:
+                if round(pi_multiple) == 0:
+                    label_text = "x = 0"
+                elif round(pi_multiple) == 1:
+                    label_text = r"x = \pi"
+                else:
+                    label_text = fr"x = {round(pi_multiple)}\pi"
+            else:
+                denominator = 2
+                while denominator <= 6:
+                    if abs(pi_multiple * denominator - round(pi_multiple * denominator)) < 0.05:
+                        numerator = round(pi_multiple * denominator)
+                        if numerator == 0:
+                            label_text = "x = 0"
+                        elif numerator == denominator:
+                            label_text = r"x = \pi"
+                        else:
+                            label_text = fr"x = \frac{{{numerator}}}{{{denominator}}}\pi"
+                        break
+                    denominator += 1
+                else:
+                    label_text = f"x = {zero:.2f}"
+            
+            label = MathTex(label_text)
+            label.scale(0.7).next_to(dot, DOWN)
+            zero_labels.append(label)
+            
+            self.play(
+                Create(dot),
+                Write(label)
+            )
+        
+        self.wait(1)
+        
+        self.play(
+            FadeOut(zeros_title),
+            *[FadeOut(dot) for dot in zero_dots],
+            *[FadeOut(label) for label in zero_labels]
+        )
+        
+        # 4. Maxima and Minima
+        extrema_title = Text("Maxima and Minima", font_size=36).to_corner(UL)
+        self.play(Write(extrema_title))
+        
+        max_cp_to_show = 6
+        if len(critical_points) > max_cp_to_show:
+            critical_points = critical_points[:max_cp_to_show]
+        
+        for i, (cp_x, cp_y) in enumerate(critical_points):
+            cp_dot = Dot(axes.c2p(cp_x, cp_y), color=YELLOW)
+            tangent = axes.plot(
+                lambda x: cp_y,
+                x_range=[cp_x - 0.2 * period, cp_x + 0.2 * period],
+                color=GREEN
+            )
+            
+            cp_type = "Maximum" if i % 2 == 0 else "Minimum"
+            pi_multiple = cp_x / PI
+            if abs(pi_multiple - round(pi_multiple)) < 0.01:
+                if round(pi_multiple) == 0:
+                    x_text = "0"
+                elif round(pi_multiple) == 1:
+                    x_text = r"\pi"
+                else:
+                    x_text = fr"{round(pi_multiple)}\pi"
+            else:
+                denominator = 2
+                while denominator <= 6:
+                    if abs(pi_multiple * denominator - round(pi_multiple * denominator)) < 0.05:
+                        numerator = round(pi_multiple * denominator)
+                        if numerator == 0:
+                            x_text = "0"
+                        elif numerator == denominator:
+                            x_text = r"\pi"
+                        else:
+                            x_text = fr"\frac{{{numerator}}}{{{denominator}}}\pi"
+                        break
+                    denominator += 1
+                else:
+                    x_text = f"{cp_x:.2f}"
+            
+            cp_label = MathTex(fr"{cp_type} \ at \ x = {x_text}")
+            value_label = MathTex(fr"f({x_text}) = {cp_y:.2f}")
+            
+            cp_label.scale(0.6).next_to(cp_dot, UP)
+            value_label.scale(0.6).next_to(cp_label, UP)
+            
+            self.play(
+                Create(cp_dot),
+                Create(tangent)
+            )
+            self.play(
+                Write(cp_label),
+                Write(value_label)
+            )
+            
+            self.wait(0.5)
+            
+            self.play(
+                FadeOut(cp_dot),
+                FadeOut(tangent),
+                FadeOut(cp_label),
+                FadeOut(value_label)
+            )
+        
+        self.play(FadeOut(extrema_title))
+        
+        # 5. Symmetry
+        symmetry_title = Text("Symmetry", font_size=36).to_corner(UL)
+        self.play(Write(symmetry_title))
+        
+        is_even = True
+        is_odd = True
+        test_points = np.linspace(0, period/2, 20)
+        
+        for t in test_points:
+            if abs(func(t) - func(-t)) > 0.1:
+                is_even = False
+            if abs(func(t) + func(-t)) > 0.1:
+                is_odd = False
+                
+        if is_even:
+            symmetry_text = "Function has even symmetry: f(-x) = f(x)"
+            reflect_point = 0
+        elif is_odd:
+            symmetry_text = "Function has odd symmetry: f(-x) = -f(x)"
+            reflect_point = 0
+        else:
+            symmetry_text = "Function has no odd/even symmetry about origin"
+            half_period_symmetry = True
+            for t in test_points:
+                if abs(func(t) - func(period/2 - t)) > 0.1:
+                    half_period_symmetry = False
+                    break
+                    
+            if half_period_symmetry:
+                symmetry_text += fr"\nBut has symmetry about x = {period/(2*PI):.2f}\pi"
+                reflect_point = period/2
+            else:
+                reflect_point = None
+        
+        symmetry_label = Text(symmetry_text, font_size=24)
+        symmetry_label.next_to(symmetry_title, DOWN, aligned_edge=LEFT)
+        
+        self.play(Write(symmetry_label))
+        
+        if reflect_point is not None:
+            if reflect_point == 0:
+                if is_even:
+                    original_segment = axes.plot(func, x_range=[0, period/2], color=YELLOW)
+                    reflected_segment = axes.plot(lambda x: func(-x), x_range=[-period/2, 0], color=GREEN)
+                else:
+                    original_segment = axes.plot(func, x_range=[0, period/2], color=YELLOW)
+                    reflected_segment = axes.plot(lambda x: -func(-x), x_range=[-period/2, 0], color=GREEN)
+            else:
+                original_segment = axes.plot(func, x_range=[0, reflect_point], color=YELLOW)
+                reflected_segment = axes.plot(lambda x: func(2*reflect_point - x), 
+                                              x_range=[reflect_point, 2*reflect_point], color=GREEN)
+            
+            self.play(Create(original_segment))
+            self.play(Create(reflected_segment))
+            
+            self.wait(1)
+            
+            self.play(
+                FadeOut(original_segment),
+                FadeOut(reflected_segment)
+            )
+        
+        self.wait(1)
+        
+        self.play(
+            FadeOut(symmetry_title),
+            FadeOut(symmetry_label)
+        )
+        
+        # Final summary
+        summary_title = Text("Summary", font_size=36).to_edge(UP)
+        summary_points = VGroup(
+            Text(f"• Period: {period/PI:.2f}π", font_size=24),
+            Text(f"• Range: [{min_y:.2f}, {max_y:.2f}]", font_size=24),
+            Text(f"• Amplitude: {amplitude:.2f}", font_size=24),
+            Text(f"• {len(zeros)} zeros (x-intercepts) in [0, {2*period/PI:.0f}π]", font_size=24),
+            Text(f"• {len(critical_points)} critical points", font_size=24),
+            Text(f"• {'Has' if is_even or is_odd else 'No'} {'even' if is_even else 'odd' if is_odd else ''} symmetry", font_size=24)
+        ).arrange(DOWN, aligned_edge=LEFT)
+        
+        summary_points.next_to(summary_title, DOWN, buff=0.5)
+        
+        self.play(
+            FadeOut(title),
+            FadeOut(equation_display),
+            FadeIn(summary_title)
+        )
+        
+        for point in summary_points:
+            self.play(Write(point), run_time=0.5)
+            
+        self.wait(2)
+        
+        self.play(
+            FadeOut(summary_title),
+            FadeOut(summary_points),
+            FadeOut(axes),
+            # *[FadeOut(label) for label in x_labels],
+            FadeOut(axes_labels),
+            FadeOut(graph)
+        )
+        
+        self.wait(1)
+
+scene = TrigFunctionVisualizer()
+scene.render()
